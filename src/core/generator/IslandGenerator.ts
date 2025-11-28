@@ -22,40 +22,55 @@ export class IslandGenerator {
    * Main entry point to generate the grid.
    */
   public generate(params: GenerationParams): Tile[][] {
-    // 1. Initialize Seed (String to Number hash)
+    // 1. Initialize Seed
     this.seed = params.seed.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
 
     const grid: Tile[][] = [];
-    const centerX = Math.floor(params.width / 2);
-    const centerY = Math.floor(params.height / 2);
     
-    // Base radius for the island shape
-    const baseRadius = Math.min(centerX, centerY) * 0.7; 
+    // On calcule le centre exact
+    const centerX = params.width / 2;
+    const centerY = params.height / 2;
 
-    // --- STEP 1: SHAPE GENERATION (The "Potato" Algorithm) ---
+    // --- STEP 1: SHAPE GENERATION (Normalized Potato) ---
     for (let y = 0; y < params.height; y++) {
       const row: Tile[] = [];
       for (let x = 0; x < params.width; x++) {
         
-        const dx = x - centerX;
-        const dy = y - centerY;
-        const distance = Math.sqrt(dx*dx + dy*dy);
-        
-        // Modulate radius based on angle to create irregularities
-        const angle = Math.atan2(dy, dx);
-        const irregularity = Math.sin(angle * 3 + this.seed) * 2 
-                           + Math.cos(angle * 5) * 1.5;          
-        
-        const threshold = baseRadius + irregularity;
-        let isLand = distance < threshold;
+        // --- NOUVELLE LOGIQUE ---
+        // 1. On normalise les coordonnées entre -1 et 1
+        // (nx, ny) = (0,0) est le centre, (1,1) est le coin bas-droite
+        const nx = (x - centerX) / (params.width / 2);
+        const ny = (y - centerY) / (params.height / 2);
 
-        // Force ocean on extreme borders
-        if (x < 2 || y < 2 || x > params.width - 3 || y > params.height - 3) isLand = false;
+        // 2. Calcul de la distance depuis le centre (0 à 1+)
+        // Cette formule gère naturellement les rectangles (ça fait une ellipse)
+        const distance = Math.sqrt(nx*nx + ny*ny);
+
+        // 3. Calcul de l'angle pour le bruit
+        const angle = Math.atan2(ny, nx);
+
+        // 4. Bruit (Irrégularité)
+        // On réduit l'amplitude du bruit pour éviter que ça ne sorte trop du cadre
+        // Le bruit varie environ entre -0.1 et +0.1
+        const noise = (Math.sin(angle * 3 + this.seed) + Math.cos(angle * 5 + this.seed * 0.5)) * 0.08; 
+        
+        // 5. Seuil de Terre (Threshold)
+        // On veut que l'île aille jusqu'à ~85% du bord (0.85)
+        // Si distance < 0.85 + bruit, c'est de la terre.
+        // Cela laisse environ 10-15% de marge (eau) sur les bords.
+        const baseSize = 0.85; 
+        let isLand = distance < (baseSize + noise);
+
+        // Sécurité absolue : Force l'eau sur les 2 dernières cases des bords
+        // Comme tu l'as demandé ("2 cases d'eau minimum")
+        if (x < 2 || y < 2 || x >= params.width - 2 || y >= params.height - 2) {
+            isLand = false;
+        }
 
         row.push({
           id: `${x}-${y}`,
           x, y,
-          biome: BiomeType.OCEAN, // Default
+          biome: BiomeType.OCEAN,
           poi: null,
           elevation: isLand ? 1 : 0
         });
@@ -74,9 +89,10 @@ export class IslandGenerator {
 
   private applyBiomesVoronoi(grid: Tile[][], params: GenerationParams) {
     const biomeSeeds: {x: number, y: number, type: BiomeType}[] = [];
-    const nbZones = 8; // Number of distinct biome regions
+    
+    // On augmente un peu le nombre de zones car l'île est plus grande
+    const nbZones = 12; 
 
-    // Biome pool (weighted for tropical feel)
     const availableBiomes = [
         BiomeType.JUNGLE, BiomeType.JUNGLE,
         BiomeType.RAINFOREST,
@@ -106,7 +122,7 @@ export class IslandGenerator {
       for (let x = 0; x < params.width; x++) {
         if (grid[y][x].elevation === 1) { 
             let minDist = Infinity;
-            let chosenBiome = BiomeType.RAINFOREST; // Fallback
+            let chosenBiome = BiomeType.RAINFOREST; 
 
             biomeSeeds.forEach(seed => {
                 const dist = Math.sqrt((x - seed.x)**2 + (y - seed.y)**2);
@@ -126,8 +142,11 @@ export class IslandGenerator {
     for (let y = 1; y < params.height - 1; y++) {
       for (let x = 1; x < params.width - 1; x++) {
         const tile = grid[y][x];
+        
+        // On ne traite que la terre
         if (tile.elevation === 1) {
-            // Check 4 neighbors
+            
+            // Vérifie les 4 voisins pour voir si c'est une côte
             const hasWaterNeighbor = 
                 grid[y+1][x].elevation === 0 || 
                 grid[y-1][x].elevation === 0 || 
@@ -135,7 +154,23 @@ export class IslandGenerator {
                 grid[y][x-1].elevation === 0;
             
             if (hasWaterNeighbor) {
-                tile.biome = BiomeType.BEACH;
+                // REGLE 1 : Pas de plage sur les montagnes (Falaises)
+                if (tile.biome === BiomeType.MOUNTAIN) continue;
+
+                // REGLE 2 : Pas de plage sur les mangroves (Marécages côtiers)
+                if (tile.biome === BiomeType.MANGROVE) continue;
+
+                // REGLE 3 : Variation naturelle pour les autres biomes
+                // On utilise une formule d'onde pour créer des "secteurs" de plage
+                // et des secteurs "sauvages".
+                // Le facteur 0.2 définit la longueur des plages (plus petit = plages plus longues)
+                const beachNoise = Math.sin(x * 0.2 + this.seed) + Math.cos(y * 0.2 + this.seed);
+
+                // Si le bruit est supérieur à un seuil, on met du sable.
+                // Sinon, on laisse la végétation toucher l'eau (côte rocheuse ou sauvage).
+                if (beachNoise > -0.5) { 
+                    tile.biome = BiomeType.BEACH;
+                }
             }
         }
       }
