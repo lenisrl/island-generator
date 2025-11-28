@@ -1,0 +1,15 @@
+# Dépendances (lourds, on les réinstalle avec npm install)
+node_modules/
+
+# Builds et fichiers temporaires
+dist/
+build/
+out/
+
+# Logs et système
+*.log
+.DS_Store
+Thumbs.db
+
+# Environnement (clés secrètes éventuelles plus tard)
+.env
