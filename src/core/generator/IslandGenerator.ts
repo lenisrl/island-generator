@@ -1,5 +1,6 @@
 import { BiomeType, POIType } from '../models/Biomes';
 import { Tile, GenerationParams } from '../models/Island';
+import { POIPlacement } from './POIPlacement';
 
 export class IslandGenerator {
   
@@ -83,6 +84,10 @@ export class IslandGenerator {
 
     // --- STEP 3: COASTLINES (Beaches) ---
     this.applyBeaches(grid, params);
+
+    // --- STEP 4: POI & CITIES ---
+    const poiPlacer = new POIPlacement();
+    poiPlacer.applyPOIs(grid, params);
 
     return grid;
   }

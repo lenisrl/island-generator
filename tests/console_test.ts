@@ -21,6 +21,8 @@ const COLORS: Record<string, string> = {
     [BiomeType.COASTAL_DESERT]: '\x1b[48;5;214m  \x1b[0m', // Orange
     [BiomeType.MOUNTAIN]: '\x1b[47m  \x1b[0m',        // White/Grey
     [BiomeType.MANGROVE]: '\x1b[48;5;29m  \x1b[0m',   // Teal
+    [BiomeType.VOLCANO]: '\x1b[41m  \x1b[0m',        // Red
+    [BiomeType.URBAN_ZONE]: '\x1b[47;100m  \x1b[0m', // Dark Grey (City)
     'DEFAULT': '\x1b[45m  \x1b[0m'                    // Magenta (Error)
 };
 
