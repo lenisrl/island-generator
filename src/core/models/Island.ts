@@ -21,6 +21,7 @@ export interface GenerationParams {
   seed: string;           // String seed for reproducibility
   wealthLevel: number;    // 0 to 100
   highInequality: boolean; // Enables both high wealth and high crime POIs
+  population: number; // Ajoute cette ligne si elle manque !
 }
 
 /**
