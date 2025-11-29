@@ -1,0 +1,35 @@
+/* src/renderer/components/Grid.css */
+.map-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 40px;
+  background-color: #1a1a1a; /* Fond sombre */
+  height: 100vh;
+  box-sizing: border-box;
+  overflow: auto;
+}
+
+.grid {
+  display: grid;
+  gap: 0;
+  border: 4px solid #444;
+  box-shadow: 0 0 20px rgba(0,0,0,0.5);
+}
+
+.tile {
+  width: 20px;     /* Taille d'une case */
+  height: 20px;
+  cursor: pointer;
+  transition: opacity 0.1s;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 12px; /* Taille des icônes */
+}
+
+.tile:hover {
+  opacity: 0.8;
+  border: 1px solid white;
+  z-index: 10; /* Passe au dessus pour voir la bordure */
+}
