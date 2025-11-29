@@ -9,7 +9,12 @@ export interface Tile {
   y: number;
   biome: BiomeType;
   poi: POIType | null;
-  elevation: number;      // 0 for water, 1 for land (simplistic for V1)
+  elevation: number;      // 0 for water, 1 for land
+  
+  // --- NOUVEAUX CHAMPS LORE (Optionnels) ---
+  descriptionVisual?: string; // Le ? signifie que le champ peut être vide/indéfini au début
+  loreEvent?: string;         // Pareil pour le lore
+  imagePath?: string;         // Pour plus tard (gestion image)
 }
 
 /**

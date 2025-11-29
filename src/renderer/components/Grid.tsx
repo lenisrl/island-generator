@@ -35,9 +35,10 @@ interface GridProps {
   grid: Tile[][];
   width: number;
   height: number;
+  onTileClick: (tile: Tile) => void;
 }
 
-export const Grid: React.FC<GridProps> = ({ grid, width, height }) => {
+export const Grid: React.FC<GridProps> = ({ grid, width, height, onTileClick}) => {
   
   // Configuration CSS Grid dynamique selon la taille de l'île
   const gridStyle = {
@@ -63,6 +64,7 @@ export const Grid: React.FC<GridProps> = ({ grid, width, height }) => {
                 className="tile"
                 style={{ backgroundColor }}
                 title={`Biome: ${tile.biome} ${tile.poi ? '| POI: ' + tile.poi : ''}`}
+                onClick={() => onTileClick(tile)}
               >
                 {icon}
               </div>

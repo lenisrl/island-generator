@@ -3,9 +3,11 @@ import React, { useEffect, useState } from 'react';
 import { IslandGenerator } from '../core/generator/IslandGenerator';
 import { GenerationParams, Tile } from '../core/models/Island';
 import { Grid } from './components/Grid';
+import { Inspector } from './components/Inspector/Inspector';
 
 const App: React.FC = () => {
   const [grid, setGrid] = useState<Tile[][] | null>(null);
+  const [selectedTile, setSelectedTile] = useState<Tile | null>(null);
   
   // Paramètres par défaut (tu pourras les changer via un menu plus tard)
   const [params] = useState<GenerationParams>({
@@ -24,6 +26,19 @@ const App: React.FC = () => {
     setGrid(newGrid);
   }, [params]);
 
+  // Fonction appelée quand l'utilisateur clique sur "Sauvegarder" dans l'inspecteur
+  const handleUpdateTile = (updatedTile: Tile) => {
+    if (!grid) return;
+
+    // On doit créer une nouvelle copie de la grille pour que React détecte le changement
+    const newGrid = [...grid]; 
+    // On remplace la case modifiée à la bonne position [y][x]
+    newGrid[updatedTile.y][updatedTile.x] = updatedTile;
+    
+    setGrid(newGrid);
+    console.log("Tile updated:", updatedTile);
+  };
+
   if (!grid) return <div style={{color:'white', padding: 20}}>Loading Map...</div>;
 
   return (
@@ -40,7 +55,21 @@ const App: React.FC = () => {
       </div>
 
       {/* La Carte */}
-      <Grid grid={grid} width={params.width} height={params.height} />
+      <Grid 
+        grid={grid} 
+        width={params.width} 
+        height={params.height} 
+        onTileClick={(tile) => setSelectedTile(tile)}
+      />
+
+      {/* L'Inspecteur (visible seulement si une case est sélectionnée) */}
+      {selectedTile && (
+        <Inspector 
+          tile={selectedTile}
+          onClose={() => setSelectedTile(null)} // Fermer = vider la sélection
+          onSave={handleUpdateTile}
+        />
+      )}
     </div>
   );
 };
