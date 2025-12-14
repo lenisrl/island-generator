@@ -1,0 +1,38 @@
+.creation-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  background-color: #111; /* Fond très sombre */
+}
+
+.creation-card {
+  width: 500px;
+  background-color: #2a2a2a;
+  padding: 40px;
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+  color: white;
+}
+
+/* ... Garde le reste du style des inputs de l'ancienne Sidebar ... */
+.control-group { margin-bottom: 20px; }
+.control-group label { display: block; margin-bottom: 8px; color: #aaa; }
+input[type="text"], input[type="number"] { 
+  width: 100%; padding: 10px; background: #1a1a1a; border: 1px solid #444; color: white; 
+}
+.action-btn {
+  width: 100%;
+  padding: 15px;
+  background-color: #2b65ec;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 1.1rem;
+  cursor: pointer;
+  margin-top: 20px;
+}
+.back-btn {
+  background: none; border: none; color: #888; cursor: pointer; margin-bottom: 20px;
+}
+.back-btn:hover { color: white; }
