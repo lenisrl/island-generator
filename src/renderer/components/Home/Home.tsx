@@ -27,13 +27,21 @@ export const Home: React.FC<HomeProps> = ({ onNewIsland, onLoadIsland }) => {
         
         <button 
           onClick={onLoadIsland}
-          disabled={true} // Désactivé pour l'instant
+          // On a retiré disabled={true}
           style={{
-            padding: '15px 30px', fontSize: '1.2rem', cursor: 'not-allowed',
-            backgroundColor: '#333', color: '#666', border: 'none', borderRadius: 8
+            padding: '15px 30px', 
+            fontSize: '1.2rem', 
+            cursor: 'pointer', // C'est cliquable maintenant !
+            backgroundColor: '#28a745', // Vert sympa
+            color: 'white', 
+            border: 'none', 
+            borderRadius: 8,
+            transition: 'background 0.2s'
           }}
+          onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#218838'} // Petit effet hover
+          onMouseOut={(e) => e.currentTarget.style.backgroundColor = '#28a745'}
         >
-          📂 Charger (Bientôt)
+          📂 Charger une Île
         </button>
       </div>
     </div>
