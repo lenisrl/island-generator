@@ -4,93 +4,128 @@ import './Inspector.css';
 
 interface InspectorProps {
   tile: Tile;
+  currentSeed: string; // NOUVEAU : On a besoin du seed pour savoir où enregistrer
   onClose: () => void;
   onSave: (updatedTile: Tile) => void;
 }
 
-export const Inspector: React.FC<InspectorProps> = ({ tile, onClose, onSave }) => {
-  // État local pour les champs de texte
-  // On initialise avec les valeurs existantes de la case (ou vide)
+export const Inspector: React.FC<InspectorProps> = ({ tile, currentSeed, onClose, onSave }) => {
   const [descVisual, setDescVisual] = useState(tile.descriptionVisual || '');
   const [lore, setLore] = useState(tile.loreEvent || '');
+  // État pour la liste des images (tableau de chaînes)
+  const [images, setImages] = useState<string[]>(tile.imagePaths || []);
+  
+  // État pour la Lightbox (contient le chemin de l'image à afficher en grand, ou null)
+  const [lightboxImage, setLightboxImage] = useState<string | null>(null);
 
-  // Si la case change (ex: clic ailleurs), on met à jour les champs
+  // État pour le chemin de base sur le disque (pour l'affichage)
+  const [basePath, setBasePath] = useState<string>('');
+
   useEffect(() => {
     setDescVisual(tile.descriptionVisual || '');
     setLore(tile.loreEvent || '');
+    setImages(tile.imagePaths || []); // Charge les images existantes
+
+    window.electronAPI.getUserDataPath().then(path => {
+        // CORRECTION : On remplace les \ par des / pour Windows
+        const cleanPath = path.replace(/\\/g, '/');
+        // On ajoute file:/// (3 slashs) pour être sûr
+        setBasePath(`file:///${cleanPath}`);
+    });
   }, [tile]);
 
   const handleSave = () => {
-    // On crée une copie de la case avec les nouvelles infos
     const updatedTile = {
       ...tile,
       descriptionVisual: descVisual,
-      loreEvent: lore
+      loreEvent: lore,
+      imagePaths: images // On sauvegarde le tableau d'images
     };
     onSave(updatedTile);
     onClose();
   };
 
+  const handleAddImage = async () => {
+      // On appelle le processus principal pour importer
+      const result = await window.electronAPI.importImage(currentSeed);
+      if (result.success && result.path) {
+          // On ajoute le nouveau chemin relatif à la liste
+          setImages(prev => [...prev, result.path!]);
+      }
+  };
+
+  // Fonction utilitaire pour construire le chemin d'affichage complet
+  const getFullImagePath = (relativePath: string) => {
+      // relativePath est déjà propre ("images/SEED/img.jpg")
+      return `${basePath}/${relativePath}`;
+  };
+
   return (
+    <>
+    {/* MODALE INSPECTEUR */}
     <div className="modal-overlay" onClick={onClose}>
-      {/* stopPropagation empêche de fermer si on clique DANS la fenêtre */}
       <div className="modal-content" onClick={e => e.stopPropagation()}>
         
-        {/* HEADER */}
         <div className="modal-header">
           <h2>
             <span>{tile.poi ? '📍' : '🌍'}</span> 
             {tile.poi ? tile.poi.replace('_', ' ') : tile.biome} 
-            <small style={{fontSize:'0.8rem', color:'#aaa', marginLeft:10}}>
-               (X:{tile.x}, Y:{tile.y})
-            </small>
           </h2>
           <button className="close-button" onClick={onClose}>&times;</button>
         </div>
 
-        {/* BODY */}
         <div className="modal-body">
           
-          {/* Champ Description Visuelle (Toujours là) */}
           <div className="form-group">
             <label>👀 Description Visuelle</label>
-            <textarea 
-              value={descVisual}
-              onChange={(e) => setDescVisual(e.target.value)}
-              placeholder="À quoi ressemble cet endroit ? (Ex: Une plage de sable noir bordée de palmiers géants...)"
-            />
+            <textarea value={descVisual} onChange={(e) => setDescVisual(e.target.value)} placeholder="..." />
           </div>
 
-          {/* Champ Lore (Seulement si c'est un POI ou une Ville) */}
           {tile.poi && (
             <div className="form-group">
               <label>📜 Lore & Événements (Secret)</label>
-              <textarea 
-                value={lore}
-                onChange={(e) => setLore(e.target.value)}
-                placeholder="Que s'y passe-t-il ? Qui dirige cet endroit ?"
-                style={{borderColor: '#ffd70044'}} // Petit bord doré pour le lore
-              />
+              <textarea value={lore} onChange={(e) => setLore(e.target.value)} placeholder="..." style={{borderColor: '#ffd70044'}} />
             </div>
           )}
 
-          {/* Zone Images (Placeholder pour l'instant) */}
+          {/* GALERIE D'IMAGES */}
           <div className="form-group">
-            <label>📷 Galerie</label>
-            <div style={{border:'2px dashed #444', padding: 20, textAlign:'center', color:'#666', borderRadius:4}}>
-              (Module d'import d'images à venir dans la prochaine version)
+            <label>📷 Galerie ({images.length})</label>
+            
+            <div className="gallery-container">
+                {/* Miniatures existantes */}
+                {images.map((imgRelativePath, index) => (
+                    <div key={index} className="thumbnail-wrapper" onClick={() => setLightboxImage(imgRelativePath)}>
+                        {basePath && <img src={getFullImagePath(imgRelativePath)} alt="thumbnail" className="thumbnail" />}
+                    </div>
+                ))}
+
+                {/* Bouton Ajouter */}
+                <button className="add-image-btn" onClick={handleAddImage} title="Ajouter une image">
+                    +
+                </button>
             </div>
+
           </div>
 
         </div>
 
-        {/* FOOTER */}
         <div className="modal-footer">
           <button onClick={onClose} style={{background:'none', border:'none', color:'#aaa', cursor:'pointer'}}>Annuler</button>
-          <button className="save-btn" onClick={handleSave}>Sauvegarder</button>
+          {/* On change le texte ici pour éviter la confusion */}
+          <button className="save-btn" onClick={handleSave}>Valider</button>
         </div>
 
       </div>
     </div>
+
+    {/* LIGHTBOX (Si une image est sélectionnée) */}
+    {lightboxImage && (
+        <div className="lightbox-overlay" onClick={() => setLightboxImage(null)}>
+            <button className="lightbox-close">&times;</button>
+            <img src={getFullImagePath(lightboxImage)} alt="Full screen" className="lightbox-image" onClick={e => e.stopPropagation()} />
+        </div>
+    )}
+    </>
   );
 };

@@ -1,3 +1,4 @@
+// src/renderer/App.tsx
 import React, { useEffect, useState } from 'react';
 import { IslandGenerator } from '../core/generator/IslandGenerator';
 import { GenerationParams, Tile } from '../core/models/Island';
@@ -5,22 +6,24 @@ import { Grid } from './components/Grid';
 import { Inspector } from './components/Inspector/Inspector';
 import { CreationMenu } from './components/CreationMenu/CreationMenu';
 import { Home } from './components/Home/Home';
-import { LoadMenu } from './components/LoadMenu/LoadMenu'; // Import
+import { LoadMenu } from './components/LoadMenu/LoadMenu';
 
-type ViewState = 'HOME' | 'CREATION' | 'MAP' | 'LOAD'; // Ajout de LOAD
+// Définition des écrans possibles
+type ViewState = 'HOME' | 'CREATION' | 'MAP' | 'LOAD';
 
 const App: React.FC = () => {
   const [view, setView] = useState<ViewState>('HOME');
   
   const [grid, setGrid] = useState<Tile[][] | null>(null);
   const [selectedTile, setSelectedTile] = useState<Tile | null>(null);
+  
+  // Paramètres par défaut
   const [params, setParams] = useState<GenerationParams>({
     width: 60, height: 40, seed: "NEW_WORLD", wealthLevel: 50, highInequality: false, population: 15000
   });
 
   // --- LOGIQUE SAUVEGARDE & CHARGEMENT ---
 
-  // NOUVEAU SAVE (Automatique)
   const handleSaveIsland = async () => {
     if (!grid) return;
     const islandData = {
@@ -31,13 +34,12 @@ const App: React.FC = () => {
 
     const result = await window.electronAPI.saveIsland(islandData);
     if (result.success) {
-      alert(`Île sauvegardée !`); // Simple alerte pour l'instant
+      alert(`Île sauvegardée !`);
     } else {
       alert('Erreur sauvegarde.');
     }
   };
 
-  // NOUVEAU LOAD (Prend un nom de fichier)
   const handleLoadIsland = async (filename: string) => {
     const result = await window.electronAPI.loadIsland(filename);
     if (result.success && result.data) {
@@ -47,12 +49,28 @@ const App: React.FC = () => {
     }
   };
 
+  // --- LOGIQUE MISE A JOUR TUILE (C'est celle qui manquait !) ---
+  const handleUpdateTile = (updatedTile: Tile) => {
+    if (!grid) return;
+    
+    // 1. Copie de la grille
+    const newGrid = [...grid];
+    // 2. Copie de la ligne spécifique (Fix React pour détecter le changement)
+    newGrid[updatedTile.y] = [...newGrid[updatedTile.y]];
+    // 3. Mise à jour de la case
+    newGrid[updatedTile.y][updatedTile.x] = updatedTile;
+    
+    setGrid(newGrid);
+    console.log("Tile updated:", updatedTile);
+  };
+
   // --- RENDU ---
 
-  // GENERATION (Seulement si on vient de Creation, pas si on a chargé un fichier)
+  // GENERATION
   useEffect(() => {
+    // On génère seulement si on est sur la carte ET que la grille est vide
+    // (pour ne pas écraser un chargement)
     if (view === 'MAP' && !grid) { 
-      // !grid est important : si on a chargé une île, grid n'est pas null, donc on ne régénère pas !
       const generator = new IslandGenerator();
       setGrid(generator.generate(params));
     }
@@ -63,11 +81,11 @@ const App: React.FC = () => {
   if (view === 'HOME') {
     return <Home 
         onNewIsland={() => { setGrid(null); setView('CREATION'); }} 
-        onLoadIsland={() => setView('LOAD')} // Va vers le menu LOAD
+        onLoadIsland={() => setView('LOAD')} 
     />;
   }
 
-  // 2. LOAD MENU (Nouveau)
+  // 2. LOAD MENU
   if (view === 'LOAD') {
     return <LoadMenu 
         onBack={() => setView('HOME')}
@@ -75,7 +93,7 @@ const App: React.FC = () => {
     />;
   }
 
-  // 2. CREATION
+  // 3. CREATION
   if (view === 'CREATION') {
     return (
       <CreationMenu 
@@ -83,18 +101,18 @@ const App: React.FC = () => {
         onBack={() => setView('HOME')}
         onGenerate={(newParams) => {
           setParams(newParams);
-          setGrid(null); // On s'assure que la grille est vide pour déclencher le useEffect
+          setGrid(null);
           setView('MAP');
         }}
       />
     );
   }
 
-  // 3. MAP
+  // 4. MAP
   return (
     <div style={{ height: '100vh', backgroundColor: '#1a1a1a', position: 'relative' }}>
       
-      {/* Barre d'outils flottante */}
+      {/* Barre d'outils */}
       <div style={{
             position: 'fixed', top: 20, left: 20, zIndex: 50, display: 'flex', gap: 10
       }}>
@@ -137,8 +155,9 @@ const App: React.FC = () => {
       {selectedTile && (
         <Inspector 
           tile={selectedTile}
+          currentSeed={params.seed} // Important pour le dossier images
           onClose={() => setSelectedTile(null)} 
-          onSave={handleSaveIsland} // Attention j'avais appelé ça onSave avant, vérifie le nom de la prop dans ton App.tsx précédent ou ici
+          onSave={handleUpdateTile} // C'est ici qu'on connecte la fonction !
         />
       )}
     </div>

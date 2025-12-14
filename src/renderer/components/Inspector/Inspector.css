@@ -112,3 +112,77 @@ button.save-btn {
   font-weight: bold;
 }
 button.save-btn:hover { background-color: #1a50d1; }
+
+/* GALERIE D'IMAGES */
+.gallery-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.thumbnail-wrapper {
+    position: relative;
+    width: 80px;
+    height: 80px;
+    cursor: pointer;
+    border-radius: 4px;
+    overflow: hidden;
+    border: 2px solid transparent;
+    transition: border-color 0.2s;
+}
+
+.thumbnail-wrapper:hover {
+    border-color: #2b65ec;
+}
+
+.thumbnail {
+    width: 100%;
+    height: 100%;
+    object-fit: cover; /* Recadre l'image pour qu'elle remplisse le carré */
+}
+
+/* Bouton d'ajout carré */
+.add-image-btn {
+    width: 80px;
+    height: 80px;
+    background-color: #333;
+    border: 2px dashed #555;
+    border-radius: 4px;
+    color: #aaa;
+    font-size: 2rem;
+    cursor: pointer;
+    display: flex; justify-content: center; align-items: center;
+    transition: color 0.2s, border-color 0.2s;
+    padding: 0; /* Reset button styles */
+}
+.add-image-btn:hover { color: white; border-color: #777; }
+
+/* LIGHTBOX (Plein écran) */
+.lightbox-overlay {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background-color: rgba(0, 0, 0, 0.95); /* Fond presque noir */
+    z-index: 2000; /* Au dessus de tout */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: zoom-out; /* Indique qu'on peut cliquer pour fermer */
+}
+
+.lightbox-image {
+    max-width: 90vw;
+    max-height: 90vh;
+    object-fit: contain; /* Affiche l'image en entier sans déformer */
+    box-shadow: 0 0 20px rgba(0,0,0,0.5);
+}
+
+.lightbox-close {
+    position: absolute;
+    top: 20px;
+    right: 30px;
+    color: white;
+    font-size: 3rem;
+    cursor: pointer;
+    background: none; border: none;
+}

@@ -14,7 +14,7 @@ export interface Tile {
   // --- NOUVEAUX CHAMPS LORE (Optionnels) ---
   descriptionVisual?: string; // Le ? signifie que le champ peut être vide/indéfini au début
   loreEvent?: string;         // Pareil pour le lore
-  imagePath?: string;         // Pour plus tard (gestion image)
+  imagePaths?: string[]; // <--- CHANGEMENT ICI : tableau de chaînes ([])
 }
 
 /**
